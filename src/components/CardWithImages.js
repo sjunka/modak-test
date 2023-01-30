@@ -16,25 +16,6 @@ import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useGalleryDetails from '../hooks/useGalleryDetail';
 
-const storeFavorites = async favorites => {
-  try {
-    await AsyncStorage.setItem('favorites', JSON.stringify(favorites));
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-const retrieveFavorites = async setFavorites => {
-  try {
-    const favorites = await AsyncStorage.getItem('favorites');
-    if (favorites !== null) {
-      setFavorites(JSON.parse(favorites));
-    }
-  } catch (error) {
-    console.log(error);
-  }
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -115,95 +96,93 @@ const styles = StyleSheet.create({
   },
 });
 
-const toggleFavorite = ({artwork, favorites, setFavorites}) => {
-  if (favorites.lenght == 'undefined') {
-    return null;
-  }
+const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
+  const URL_DETAIL = `https://api.artic.edu/api/v1/artworks/${id}`;
+  const [modalVisible, setModalVisible] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+  const {data} = useGalleryDetails(URL_DETAIL);
 
-  if (favorites.includes(artwork)) {
-    setFavorites(favorites.filter(a => a !== artwork));
-  } else {
-    setFavorites([...favorites, artwork]);
-  }
-};
+  const saveFavorite = async savedFavorite => {
+    try {
+      await AsyncStorage.setItem('favorites', JSON.stringify(savedFavorite));
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-const DisplayModal = ({
-  modalVisible,
-  setModalVisible,
-  dataDetail,
-  favorites,
-  setFavorites,
-}) => {
-  return (
-    <View style={styles.centeredView}>
-      <Modal
-        animationType="slide"
-        visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(!modalVisible);
-        }}>
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <FastImage
-              style={styles.image}
-              source={{
-                uri: dataDetail.thumbnail.lqip,
-                priority: FastImage.priority.normal,
-              }}
-              resizeMode={FastImage.resizeMode.contain}
-            />
-            <Card.Title title={dataDetail.title} />
-            <Card.Content>
-              <Text>Artis: {dataDetail.artist_display}</Text>
-              <Text>Location: {dataDetail.place_of_origin}</Text>
-              <Text variant="bodySmall">
-                Dimensions: {dataDetail.dimensions}
-              </Text>
+  const getItem = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem('favorites');
+      console.log(
+        '🚀 ~ file: CardWithImages.js:116 ~ getItem ~ jsonValue',
+        jsonValue,
+      );
+
+      setFavorites(jsonValue != null ? JSON.parse(jsonValue) : null);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const DisplayModal = ({modalVisible, setModalVisible, dataDetail}) => {
+    return (
+      <View style={styles.centeredView}>
+        <Modal
+          animationType="slide"
+          visible={modalVisible}
+          onRequestClose={() => {
+            setModalVisible(!modalVisible);
+          }}>
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <FastImage
+                style={styles.image}
+                source={{
+                  uri: dataDetail.thumbnail.lqip,
+                  priority: FastImage.priority.normal,
+                }}
+                resizeMode={FastImage.resizeMode.contain}
+              />
+              <Card.Title title={dataDetail.title} />
+              <Card.Content>
+                <Text>Artis: {dataDetail.artist_display}</Text>
+                <Text>Location: {dataDetail.place_of_origin}</Text>
+                <Text variant="bodySmall">
+                  Dimensions: {dataDetail.dimensions}
+                </Text>
+
+                <Pressable
+                  style={[
+                    styles.button,
+                    styles.buttonOpen,
+                    styles.marginToppicker,
+                  ]}
+                  onPress={() => {
+                    // toggleFavorite(dataDetail, favorites, setFavorites);
+                    saveFavorite(dataDetail);
+                  }}>
+                  <Text style={styles.textStyle}>Agregar Favorito</Text>
+                </Pressable>
+              </Card.Content>
 
               <Pressable
                 style={[
                   styles.button,
-                  styles.buttonOpen,
-                  styles.marginToppicker,
+                  styles.buttonClose,
+                  styles.pressableStyles,
                 ]}
-                onPress={() => {
-                  toggleFavorite(dataDetail, favorites, setFavorites);
-                  storeFavorites(favorites);
-                }}>
-                <Text style={styles.textStyle}>
-                  {favorites.includes(dataDetail)
-                    ? 'Remover Favorito'
-                    : 'Agregar Favorito'}
-                </Text>
+                onPress={() => setModalVisible(!modalVisible)}>
+                <Text style={styles.textStyle}>VOLVER</Text>
               </Pressable>
-            </Card.Content>
-
-            <Pressable
-              style={[
-                styles.button,
-                styles.buttonClose,
-                styles.pressableStyles,
-              ]}
-              onPress={() => setModalVisible(!modalVisible)}>
-              <Text style={styles.textStyle}>VOLVER</Text>
-            </Pressable>
+            </View>
           </View>
-        </View>
-      </Modal>
-    </View>
-  );
-};
-
-const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
-  const URL_DETAIL = `https://api.artic.edu/api/v1/artworks/${id}`;
-
-  const [favoritesDB, setFavorites] = useState([]);
-
-  const [modalVisible, setModalVisible] = useState(false);
-  const {data} = useGalleryDetails(URL_DETAIL);
+        </Modal>
+      </View>
+    );
+  };
 
   useEffect(() => {
-    retrieveFavorites(setFavorites);
+    getItem();
   }, []);
 
   return (
@@ -233,8 +212,6 @@ const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
           modalVisible={modalVisible}
           setModalVisible={setModalVisible}
           dataDetail={data?.data}
-          // favorites={favorites}
-          // setFavorites={setFavorites}
         />
       )}
     </>
