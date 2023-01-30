@@ -113,11 +113,6 @@ const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
   const getItem = async () => {
     try {
       const jsonValue = await AsyncStorage.getItem('favorites');
-      console.log(
-        '🚀 ~ file: CardWithImages.js:116 ~ getItem ~ jsonValue',
-        jsonValue,
-      );
-
       setFavorites(jsonValue != null ? JSON.parse(jsonValue) : null);
     } catch (error) {
       console.log(error);
@@ -158,7 +153,6 @@ const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
                     styles.marginToppicker,
                   ]}
                   onPress={() => {
-                    // toggleFavorite(dataDetail, favorites, setFavorites);
                     saveFavorite(dataDetail);
                   }}>
                   <Text style={styles.textStyle}>Agregar Favorito</Text>
