@@ -2,15 +2,10 @@ import React, {useState, useEffect} from 'react';
 import {Text, Card} from 'react-native-paper';
 import {
   View,
-  SafeAreaView,
   StyleSheet,
-  FlatList,
-  ScrollView,
   Modal,
   TouchableWithoutFeedback,
-  Alert,
   Pressable,
-  Image,
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -96,13 +91,19 @@ const styles = StyleSheet.create({
   },
 });
 
-const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
+const CardWithImages = ({
+  imageURL,
+  title,
+  placeOfOrigin,
+  id,
+  favorites,
+  setFavorites,
+}) => {
   const URL_DETAIL = `https://api.artic.edu/api/v1/artworks/${id}`;
   const [modalVisible, setModalVisible] = useState(false);
-  const [favorites, setFavorites] = useState([]);
   const {data} = useGalleryDetails(URL_DETAIL);
 
-  const saveFavorite = async savedFavorite => {
+  const saveFavorites = async savedFavorite => {
     try {
       await AsyncStorage.setItem('favorites', JSON.stringify(savedFavorite));
     } catch (error) {
@@ -110,13 +111,10 @@ const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
     }
   };
 
-  const getItem = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem('favorites');
-      setFavorites(jsonValue != null ? JSON.parse(jsonValue) : null);
-    } catch (error) {
-      console.log(error);
-    }
+  const handleAddFavorite = newFavorite => {
+    let spread = [...Object.values(newFavorite)];
+    setFavorites([...spread, newFavorite]);
+    saveFavorites([...spread, newFavorite]);
   };
 
   const DisplayModal = ({modalVisible, setModalVisible, dataDetail}) => {
@@ -153,7 +151,7 @@ const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
                     styles.marginToppicker,
                   ]}
                   onPress={() => {
-                    saveFavorite(dataDetail);
+                    handleAddFavorite(dataDetail);
                   }}>
                   <Text style={styles.textStyle}>Agregar Favorito</Text>
                 </Pressable>
@@ -175,9 +173,15 @@ const CardWithImages = ({imageURL, title, placeOfOrigin, id}) => {
     );
   };
 
-  useEffect(() => {
-    getItem();
-  }, []);
+  const toggleFavorite = artwork => {
+    if (favorites.includes(artwork)) {
+      setFavorites(favorites.filter(f => f !== artwork));
+      saveFavorites(favorites.filter(f => f !== artwork));
+    } else {
+      setFavorites([...favorites, artwork]);
+      saveFavorites([...favorites, artwork]);
+    }
+  };
 
   return (
     <>
